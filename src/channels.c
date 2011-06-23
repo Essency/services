@@ -63,7 +63,8 @@ ChannelMode known_cmodes[] = {
 	{ CMODE_S,	'S' },
 	{ CMODE_t,	't' },
 	{ CMODE_u,	'u' },
-	{ CMODE_U,	'U' }
+	{ CMODE_U,	'U' },
+	{ CMODE_B,	'B' }
 };
 
 
@@ -197,7 +198,6 @@ void chan_handle_SJOIN(CSTR source, const int ac, char **av) {
 
 				log_error(FACILITY_CHANNELS_HANDLE_SJOIN, __LINE__, LOG_TYPE_ERROR_ASSERTION, LOG_SEVERITY_ERROR_HALTED, 
 					"handle_SJOIN(): SJOIN for %s from nonexistent user %s", av[1], source);
-
 				return;
 			}
 
@@ -396,6 +396,8 @@ void chan_handle_SJOIN(CSTR source, const int ac, char **av) {
 
 			/* Clear bans. */
 			chan_clear_bans(chan);
+			/* Clear restricts */
+			chan_clear_restricts(chan);
 
 			/* Reset the channel TS. */
 			chan->creation_time = timestamp;
@@ -408,7 +410,7 @@ void chan_handle_SJOIN(CSTR source, const int ac, char **av) {
 		if (av[3 - param][1]) {
 
 			char *ptr = av[3 - param];
-
+			char **param_ptr = &(av[4 - param]);
 			TRACE_MAIN();
 			while (*ptr) {
 
@@ -433,7 +435,9 @@ void chan_handle_SJOIN(CSTR source, const int ac, char **av) {
 				case 'j':
 					AddFlag(chan->mode, CMODE_j);
 					break;
-
+				case 'B':
+					AddFlag(chan->mode, CMODE_B);
+					break;
 				case 'k':
 
 					TRACE_MAIN();
@@ -447,11 +451,13 @@ void chan_handle_SJOIN(CSTR source, const int ac, char **av) {
 					AddFlag(chan->mode, CMODE_k);
 
 					TRACE_MAIN();
-					if (FlagSet(chan->mode, CMODE_l))
+					chan->key = str_duplicate(*param_ptr);
+					param_ptr++;
+					//if (FlagSet(chan->mode, CMODE_l))
 						/* il chan e' +l -> prima del parametro del +k c'è quello del +l -> saltarlo */
-						chan->key = str_duplicate(av[5 - param]);
-					else
-						chan->key = str_duplicate(av[4 - param]);
+					//	chan->key = str_duplicate(av[5 - param]);
+					//else
+					//	chan->key = str_duplicate(av[4 - param]);
 
 					TRACE_MAIN();
 					break;
@@ -460,11 +466,13 @@ void chan_handle_SJOIN(CSTR source, const int ac, char **av) {
 					AddFlag(chan->mode, CMODE_l);
 
 					TRACE_MAIN();
-					if (FlagSet(chan->mode, CMODE_k))
+					chan->limit = atoi(*param_ptr);
+					param_ptr++;
+					//if (FlagSet(chan->mode, CMODE_k))
 						/* il chan e' +k -> prima del parametro del +l c'è quello del +k -> saltarlo */
-						chan->limit = atoi(av[5 - param]);
-					else
-						chan->limit = atoi(av[4 - param]);
+					//	chan->limit = atoi(av[5 - param]);
+					//else
+					//	chan->limit = atoi(av[4 - param]);
 
 					TRACE_MAIN();
 					break;
@@ -1480,7 +1488,9 @@ void chan_handle_chanMODE(const char *source, const int ac, char **av) {
 			case 'j':
 				MODE(CMODE_j);
 				break;
-
+			case 'B':
+				MODE(CMODE_B);
+				break;
 			case 'k': {
 
 				char *key;
@@ -1732,6 +1742,23 @@ void chan_handle_chanMODE(const char *source, const int ac, char **av) {
 					chan_remove_voice(chan, targetUser);
 
 				break;
+			case 'z':
+				if (--argc < 0) {
+
+					log_error(FACILITY_CHANNELS_HANDLE_CHANMODE, __LINE__, LOG_TYPE_ERROR_ASSERTION, LOG_SEVERITY_ERROR_SKIPPED,
+						"MODE %s %s: missing parameter for %cz", chan_name, av[1], add ? '+' : '-');
+
+					break;
+				}
+
+				if (add)
+					chan_add_restrict(chan, *av);
+				else
+					chan_remove_restrict(chan, *av);
+
+				++av;
+				break;
+
 		}
 	}
 
@@ -2239,6 +2266,104 @@ void chan_clear_bans(Channel *chan) {
 	chan->bansize = 0;
 }
 
+BOOL chan_add_restrict(Channel *chan, const char *mask) {
+
+	TRACE_MAIN_FCLT(FACILITY_CHANNELS_ADD_RESTRICT);
+
+	if (IS_NULL(chan) || IS_NULL(mask) || IS_EMPTY_STR(mask)) {
+
+		log_error(FACILITY_CHANNELS_ADD_RESTRICT, __LINE__, LOG_TYPE_ERROR_ASSERTION, LOG_SEVERITY_ERROR_HALTED,
+			"chan_add_restrict() called with invalid parameter(s) (%s, %s)", chan ? chan->name : NULL, mask);
+
+		return FALSE;
+	}
+
+	/* If this channel reached the ban limit don't add it, the ircd would block it anyway. */
+	if (chan->restrictcount >= IRCD_MAX_BANS)
+		return FALSE;
+
+	/* Reallocate the array if necessary. */
+	if (chan->restrictcount >= chan->restrictsize) {
+
+		chan->restrictsize += 8;
+		chan->restricts = mem_realloc(chan->restricts, sizeof(char *) * chan->restrictsize);
+	}
+
+	/* Add the new ban. */
+	chan->restricts[chan->restrictcount++] = str_duplicate(mask);
+
+	return TRUE;
+}
+
+BOOL chan_remove_restrict(Channel *chan, CSTR mask) {
+
+	char	**aRestrict;
+	int	resIdx = 0;
+
+
+	TRACE_MAIN_FCLT(FACILITY_CHANNELS_REMOVE_RESTRICT);
+
+	if (IS_NULL(chan) || IS_NULL(mask) || IS_EMPTY_STR(mask)) {
+
+		log_error(FACILITY_CHANNELS_REMOVE_RESTRICT, __LINE__, LOG_TYPE_ERROR_ASSERTION, LOG_SEVERITY_ERROR_HALTED,
+			"chan_remove_restrict() called with invalid parameter(s) (%s, %s)", chan ? chan->name : NULL, mask);
+
+		return FALSE;
+	}
+
+	aRestrict = chan->restricts;
+
+	while ((resIdx < chan->restrictcount) && str_not_equals_nocase(*aRestrict, mask)) {
+
+		++resIdx;
+		++aRestrict;
+	}
+
+	if (resIdx < chan->restrictcount) {
+
+		--(chan->restrictcount);
+
+		/* Free this entry. */
+		mem_free(*aRestrict);
+
+		/* Was it the only one? */
+		if (chan->restrictcount == 0) {
+
+			mem_free(chan->restricts);
+			chan->restricts = NULL;
+			chan->restrictsize = 0;
+		}
+		else if (resIdx < chan->restrictcount)	/* Was it in the middle of the list? */
+			memmove(aRestrict, (aRestrict + 1), sizeof(char *) * (chan->restrictcount - resIdx));
+
+		return TRUE;
+	}
+
+	return FALSE;
+}
+void chan_clear_restricts(Channel *chan) {
+
+	int resIdx;
+
+
+	TRACE_MAIN_FCLT(FACILITY_CHANNELS_CLEAR_RESTRICTS);
+
+	if (IS_NULL(chan)) {
+
+		log_error(FACILITY_CHANNELS_CLEAR_RESTRICTS, __LINE__, LOG_TYPE_ERROR_ASSERTION, LOG_SEVERITY_ERROR_HALTED, s_LOG_ERR_PARAMETER, "chan_clear_restricts()", s_LOG_NULL, "chan");
+		return;
+	}
+
+	for (resIdx = 0; resIdx < chan->restrictcount; ++resIdx)
+		mem_free(chan->restricts[resIdx]);
+
+	if (chan->restrictsize)
+		mem_free(chan->restricts);
+
+	chan->restricts = NULL;
+	chan->restrictcount = 0;
+	chan->restrictsize = 0;
+}
 
 /*********************************************************
  * chan_handle_TOPIC()                                   *
@@ -2414,6 +2539,9 @@ char *get_channel_mode(const long int modeOn, const long int modeOff) {
 		if (FlagSet(modeOn, CMODE_j))
 			modebuf[modeIdx++] = 'j';
 
+		if (FlagSet(modeOn, CMODE_B))
+			modebuf[modeIdx++] = 'B';
+
 		if (FlagSet(modeOn, CMODE_k))
 			modebuf[modeIdx++] = 'k';
 
@@ -2484,6 +2612,9 @@ char *get_channel_mode(const long int modeOn, const long int modeOff) {
 
 		if (FlagSet(modeOff, CMODE_j))
 			modebuf[modeIdx++] = 'j';
+
+		if (FlagSet(modeOff, CMODE_B))
+			modebuf[modeIdx++] = 'B';
 
 		if (FlagSet(modeOff, CMODE_k))
 			modebuf[modeIdx++] = 'k';
@@ -4363,7 +4494,7 @@ static void chan_ds_dump_display(CSTR sourceNick, const User *callerUser, const 
 		for (userIdx = 1; IS_NOT_NULL(item); item = item->next, ++userIdx)
 			send_notice_to_user(sourceNick, callerUser, "%d) %s", userIdx, IS_NOT_NULL(item->user) ? str_get_valid_display_value(item->user->nick) : "NULL User pointer");
 		
-		send_notice_to_user(sourceNick, callerUser, "DUMP: %d items diplayed", userIdx);
+		send_notice_to_user(sourceNick, callerUser, "DUMP: %d items diplayed", (userIdx-1));
 	}
 	else if (str_equals_nocase(what, "BAN")) {
 
@@ -4376,6 +4507,16 @@ static void chan_ds_dump_display(CSTR sourceNick, const User *callerUser, const 
 			send_notice_to_user(sourceNick, callerUser, "%d) %s", (banIdx + 1), str_get_valid_display_value(chan->bans[banIdx]));
 
 		send_notice_to_user(sourceNick, callerUser, "DUMP: %d items diplayed", banIdx);
+	}
+	else if (str_equals_nocase(what, "RESTRICT")) {
+		int resIdx;
+
+		send_notice_to_user(sourceNick, callerUser, "DUMP channel \2%s\2 RESTRICT list", chan->name);
+
+		for(resIdx = 0; resIdx < chan->restrictcount; resIdx++)
+			send_notice_to_user(sourceNick, callerUser, "%d) %s", (resIdx+1), str_get_valid_display_value(chan->restricts[resIdx]));
+
+		send_notice_to_user(sourceNick, callerUser, "DUMP: %d items displayed", resIdx);
 	}
 	else
 		send_notice_to_user(sourceNick, callerUser, "\2DUMP\2 - Invalid type.");

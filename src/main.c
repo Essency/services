@@ -181,6 +181,7 @@ static void capab_init(void) {
 #ifdef ENABLE_CAPAB_DKEY
 	strcat(CAPAB, " DKEY");
 #endif
+	strcat(CAPAB, " EBMODE");
 }
 
 /*********************************************************/

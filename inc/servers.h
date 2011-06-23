@@ -53,16 +53,16 @@ struct _Server {
 
 // Server CAPAB
 #define CAPAB_UNKNOWN			0x00000000
-#define CAPAB_TS3				0x00000001	/* Dummy. */
+#define CAPAB_TS3			0x00000001	/* Dummy. */
 #define CAPAB_NOQUIT			0x00000002	/* Don't send QUITs on server splits, just one SQUIT. */
 #define CAPAB_SSJOIN			0x00000004	/* Use shorter and more intelligent SJOINs. */
-#define CAPAB_BURST				0x00000008	/* Notify us when we're synched. */
+#define CAPAB_BURST			0x00000008	/* Notify us when we're synched. */
 #define CAPAB_UNCONNECT			0x00000010	/* Allow us to SQUIT servers below us. */
-#define CAPAB_ZIP				0x00000020	/* Compress data during burst. */
+#define CAPAB_ZIP			0x00000020	/* Compress data during burst. */
 #define CAPAB_NICKIP			0x00000040	/* Send IP in host format in the NICK line. */
 #define CAPAB_TSMODE			0x00000080	/* Send TS along with any channel MODE. */
-#define CAPAB_DKEY				0x00000100	/* Crypt data between our hub and us. */
-
+#define CAPAB_DKEY			0x00000100	/* Crypt data between our hub and us. */
+#define CAPAB_EBMODE			0x00000200	/* Support chanmodes +B / +z */
 
 
 /*********************************************************

@@ -51,9 +51,12 @@ struct _Channel {
 	long int		limit;					/* 0 if none */
 	char			*key;					/* NULL if none */
 
-	unsigned char	bancount;				/* MAX_BANS = 100 */
-	unsigned char	bansize;
+	unsigned char		bancount;				/* MAX_BANS = 100 */
+	unsigned char		bansize;
 	char			**bans;
+	unsigned char		restrictcount;
+	unsigned char		restrictsize;
+	char			**restricts;
 
 	UserListItem	*users;
 	UserListItem	*chanops;
@@ -98,7 +101,7 @@ struct _ChannelMode {
 #define CMODE_S		0x00010000
 #define CMODE_d		0x00020000
 #define CMODE_j		0x00040000
-
+#define CMODE_B		0x00080000
 #define CMODE_CS	0x80000000
 
 
@@ -137,6 +140,9 @@ extern void chan_clear_bans(Channel *chan);
 extern int chan_has_ban(Channel *chan, CSTR ban, char *buffer);
 extern BOOL chan_add_ban(Channel *chan, CSTR ban);
 extern BOOL chan_remove_ban(Channel *chan, CSTR ban);
+extern BOOL chan_add_restrict(Channel *, CSTR);
+extern BOOL chan_remove_restrict(Channel *, CSTR);
+extern void chan_clear_restricts(Channel *);
 
 extern void synch_topics();
 extern void handle_masscmds(CSTR source, User *callerUser, ServiceCommandData *data);

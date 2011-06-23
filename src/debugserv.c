@@ -1067,7 +1067,7 @@ static void do_sysinfo(const char *source, User *callerUser, ServiceCommandData 
 			);
 
 	// supported CAPAB
-	send_notice_to_user(s_DebugServ, callerUser, "Supported CAPAB: %s%s%s%s%s%s%s%s%s",
+	send_notice_to_user(s_DebugServ, callerUser, "Supported CAPAB: %s%s%s%s%s%s%s%s%s%s",
 		#ifdef ENABLE_CAPAB_TS3
 			FlagSet(uplink_capab, CAPAB_TS3) ? "\2TS3\2 " : "TS3 ",
 		#else
@@ -1109,10 +1109,11 @@ static void do_sysinfo(const char *source, User *callerUser, ServiceCommandData 
 			"",
 		#endif
 		#ifdef ENABLE_CAPAB_SSJOIN
-			FlagSet(uplink_capab, CAPAB_SSJOIN) ? "\2SSJOIN\2 " : "SSJOIN "
+			FlagSet(uplink_capab, CAPAB_SSJOIN) ? "\2SSJOIN\2 " : "SSJOIN ",
 		#else
-			""
+			"",
 		#endif
+			FlagSet(uplink_capab, CAPAB_EBMODE) ? "\2EBMODE\2 " : "EBMODE "
 			);
 	
 	// Database options

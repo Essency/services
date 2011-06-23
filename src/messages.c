@@ -705,7 +705,7 @@ static void m_capab(CSTR source, const int ac, char **av) {
 		{ "NICKIP",		CAPAB_NICKIP },
 		{ "TSMODE",		CAPAB_TSMODE },
 		{ "DKEY",		CAPAB_DKEY },
-
+		{ "EBMODE",		CAPAB_EBMODE },
 		{ NULL,			CAPAB_UNKNOWN }
 	};
 

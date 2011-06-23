@@ -52,6 +52,8 @@
 
 // capabs
 
+#define VERS_CP_EBMODE			"E"
+
 #ifdef ENABLE_CAPAB_TS3
 #define VERS_CP_TS3			"T"
 #else
@@ -105,6 +107,7 @@
 #else
 #define VERS_CP_DKEY		""
 #endif
+
 
 #define VERS_BUILDNAME	"Core Services"
 #define VERS_MAJOR	"2"
