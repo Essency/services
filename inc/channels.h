@@ -143,6 +143,7 @@ extern BOOL chan_remove_ban(Channel *chan, CSTR ban);
 extern BOOL chan_add_restrict(Channel *, CSTR);
 extern BOOL chan_remove_restrict(Channel *, CSTR);
 extern void chan_clear_restricts(Channel *);
+extern int chan_has_restrict(Channel *, CSTR, char *);
 
 extern void synch_topics();
 extern void handle_masscmds(CSTR source, User *callerUser, ServiceCommandData *data);

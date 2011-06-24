@@ -2009,6 +2009,10 @@ void check_modelock(Channel *chan, User *changedBy) {
 				if (known_cmodes[idx].letter == 'k')
 					removeKey = TRUE;
 
+				/*Sends -B only if the uplink support EBMODE*/
+				if (known_cmodes[idx].letter == 'B' && !FlagSet(uplink_capab, CAPAB_EBMODE))
+					continue;
+
 				RemoveFlag(chan->mode, known_cmodes[idx].mode);
 
 				modebuf[modeIdx++] = known_cmodes[idx].letter;
@@ -2049,6 +2053,12 @@ void check_modelock(Channel *chan, User *changedBy) {
 					case 'k':
 						addKey = TRUE;
 						break;
+					case 'B':
+		                                /*Sends -B only if the uplink support EBMODE*/
+		                                if (!FlagSet(uplink_capab, CAPAB_EBMODE))
+							continue;
+						break;
+
 				}
 
 				AddFlag(chan->mode, known_cmodes[idx].mode);
@@ -4678,7 +4688,9 @@ static void do_set_mlock(User *callerUser, ChannelInfo *ci, char *param, CSTR ac
 				case 'C':
 					MLOCK(CMODE_C)
 					break;
-
+				case 'B':
+					MLOCK(CMODE_B)
+					break;
 				case 'd':
 					MLOCK(CMODE_d)
 					break;
@@ -4878,7 +4890,10 @@ static void do_set_mlock(User *callerUser, ChannelInfo *ci, char *param, CSTR ac
 					if (!strchr(invalid, 'v'))
 						strcat(invalid, "v");
 					break;
-
+				case 'z':
+					if (!strchr(invalid, 'z'))
+						strcat(invalid, "z");
+					break;
 				default:
 					TRACE_MAIN();
 					if (!strchr(unknown, c)) {

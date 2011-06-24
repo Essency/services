@@ -2158,6 +2158,44 @@ int chan_has_ban(Channel *chan, CSTR banmask, char *buffer) {
 	return 0;
 }
 
+int chan_has_restrict(Channel *chan, CSTR mask, char *buffer) {
+
+	char	**aRestrict;
+	int	resIdx = 0;
+
+
+	TRACE_MAIN_FCLT(FACILITY_CHANNELS_HAS_BAN);
+
+	if (IS_NULL(chan) || IS_NULL(mask) || IS_EMPTY_STR(mask)) {
+
+		log_error(FACILITY_CHANNELS_HAS_RESTRICT, __LINE__, LOG_TYPE_ERROR_ASSERTION, LOG_SEVERITY_ERROR_HALTED, 
+			"chan_has_restrict() called with invalid parameter(s) (%s, %s)", chan ? chan->name : NULL, mask);
+
+		return 0;
+	}
+
+	aRestrict = chan->restricts;
+
+	while (resIdx < chan->restrictcount) {
+
+		if (str_match_wild_nocase(*aRestrict, mask)) {
+
+			if (IS_NOT_NULL(buffer))
+				str_copy_checked(*aRestrict, buffer, MASKSIZE);
+
+			if (str_equals_nocase(*aRestrict, mask))
+				return 2;
+
+			return 1;
+		}
+
+		++resIdx;
+		++aRestrict;
+	}
+
+	return 0;
+}
+
 
 BOOL chan_add_ban(Channel *chan, const char *mask) {
 
@@ -3466,7 +3504,7 @@ void handle_mode(CSTR source, User *callerUser, ServiceCommandData *data) {
 
 							if (send_b2 == FALSE) {
 
-								send_notice_to_user(s_OperServ, callerUser, "Bans may not exceed %d characters in length.", MASKMAX);
+								send_notice_to_user(s_OperServ, callerUser, "Restrictions may not exceed %d characters in length.", MASKMAX);
 								send_b2 = TRUE;
 							}
 
@@ -3546,6 +3584,122 @@ void handle_mode(CSTR source, User *callerUser, ServiceCommandData *data) {
 						mem_free(token);
 						break;
 					}
+
+					case 'z': {
+
+						char buf[MASKSIZE];
+						char *nick, *user, *host;
+
+						if (isChanServ | !FlagSet(uplink_capab, CAPAB_EBMODE)) {
+
+							APPEND_CHAR(invalidModes, 'z')
+							break;
+						}
+
+						silent = TRUE;
+
+						if (IS_NULL(token = strtok(NULL, " "))) {
+
+							if (send_b == FALSE) {
+
+								send_notice_to_user(s_OperServ, callerUser, "Parameter required for chanmode %cz.", add ? '+' : '-');
+								send_b = TRUE;
+							}
+							break;
+						}
+
+						if (str_len(token) > MASKMAX) {
+
+							if (send_b2 == FALSE) {
+
+								send_notice_to_user(s_OperServ, callerUser, "Bans may not exceed %d characters in length.", MASKMAX);
+								send_b2 = TRUE;
+							}
+
+							break;
+						}
+
+						user_usermask_split(token, &nick, &user, &host);
+
+						if (str_len(user) > USERMAX) {
+
+							user[USERMAX - 1] = c_STAR;
+							user[USERMAX] = '\0';
+						}
+
+						if (!validate_nick(nick, TRUE) || !validate_username(user, TRUE) ||
+							!validate_host(host, TRUE, FALSE, FALSE)) {
+
+							send_notice_to_user(s_OperServ, callerUser, "Invalid mask.");
+
+							mem_free(nick);
+							mem_free(user);
+							mem_free(host);
+							return;
+						}
+
+						token = mem_malloc(str_len(nick) + str_len(user) + str_len(host) + 3);
+						sprintf((char *) token, "%s!%s@%s", nick, user, host);
+						mem_free(nick);
+						mem_free(user);
+						mem_free(host);
+
+						str_compact(token);
+
+						if (add) {
+
+							int result;
+
+							if (chan->restrictcount >= IRCD_MAX_BANS) {
+
+								send_notice_to_user(s_OperServ, callerUser, "Restrict list for \2%s\2 is full.", chan->name);
+								break;
+							}
+
+							result = chan_has_restrict(chan, token, buf);
+
+							if (result > 0) {
+
+								if (result == 1)
+									send_notice_to_user(s_OperServ, callerUser, "\2%s\2 channel restrict on \2%s\2 is already covered by: \2%s\2", chan->name, token, buf);
+								else
+									send_notice_to_user(s_OperServ, callerUser, "\2%s\2 is already restricted on \2%s\2.", token, chan->name);
+
+								mem_free(token);
+								break;
+							}
+
+							chan_add_restrict(chan, token);
+							send_cmd(":%s MODE %s +z %s %lu", s_OperServ, chan->name, token, NOW);
+
+							send_notice_to_user(s_OperServ, callerUser, "Channel restriction on \2%s\2 added on \2%s\2.", token, chan->name);
+						}
+						else {
+
+							if (!chan_remove_restrict(chan, token)) {
+
+								send_notice_to_user(s_OperServ, callerUser, "\2%s\2 is not restricted on \2%s\2.", token, chan->name);
+
+								mem_free(token);
+								break;
+							}
+
+							send_cmd(":%s MODE %s -b %s", s_OperServ, chan->name, token);
+							send_notice_to_user(s_OperServ, callerUser, "Channel restrict on \2%s\2 removed from \2%s\2.", token, chan->name);
+						}
+
+						++mode_count;
+						mem_free(token);
+						break;
+					}
+
+					case 'B':
+						if (!FlagSet(uplink_capab, CAPAB_EBMODE)) {
+							APPEND_CHAR(invalidModes, 'B')
+							break;
+						}
+						CHANMODE(CMODE_B, 'B')
+						break;
 
 					case 'c':
 						CHANMODE(CMODE_c, 'c')
