@@ -3684,7 +3684,7 @@ void handle_mode(CSTR source, User *callerUser, ServiceCommandData *data) {
 								break;
 							}
 
-							send_cmd(":%s MODE %s -b %s", s_OperServ, chan->name, token);
+							send_cmd(":%s MODE %s -z %s", s_OperServ, chan->name, token);
 							send_notice_to_user(s_OperServ, callerUser, "Channel restrict on \2%s\2 removed from \2%s\2.", token, chan->name);
 						}
 
