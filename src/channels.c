@@ -3504,7 +3504,7 @@ void handle_mode(CSTR source, User *callerUser, ServiceCommandData *data) {
 
 							if (send_b2 == FALSE) {
 
-								send_notice_to_user(s_OperServ, callerUser, "Restrictions may not exceed %d characters in length.", MASKMAX);
+								send_notice_to_user(s_OperServ, callerUser, "Bans may not exceed %d characters in length.", MASKMAX);
 								send_b2 = TRUE;
 							}
 
