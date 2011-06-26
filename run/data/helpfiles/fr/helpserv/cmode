@@ -1,4 +1,5 @@
 *** Modes du Canal ***
+  B  - Seulement les +o et les +h peuvent voir le banlist du canal.
   b  - Permet de bannir un masque d'un canal avec le format nick!user@host
   c  - Empêche d'envoyer au canal des messages avec les couleurs
   C  - Empêche d'envoyer des CTCP au canal
@@ -22,4 +23,5 @@
   u  - Ne montre pas les messages de QUIT ou PART
   U  - Permet qu'aussi les usagers non-italiens pas identifiés aux nicks entrent dans le canal
   v  - Donne à un nick la permission de parler dans un canal modéré (+m)
+  z  - Ceux qui utilisent le masque donné doit utiliser un pseudo enregistré pour accéder au canal
 *** Fin de la liste ***

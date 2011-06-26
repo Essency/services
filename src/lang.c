@@ -1148,14 +1148,18 @@ void handle_lang(CSTR source, User *callerUser, ServiceCommandData *data) {
 	else if (IS_NOT_NULL(param = strtok(NULL, s_SPACE)) && str_equals_nocase(param, "LIST"))
 		lang_send_list(data->agent->nick, callerUser);
 
-	else if (IS_NULL(param)) 
-		send_notice_to_user(data->agent->nick, callerUser, "Invalid language ID");
+/*	else if (IS_NULL(param)) 
+		send_notice_to_user(data->agent->nick, callerUser, "Invalid language ID");*/
 		
 	else if (str_equals_nocase(cmd, "RELOAD")) {
 
 		LANG_ID	lang_id;
 		char *err;
 
+		if (IS_NULL(param)) {
+			send_notice_to_user(data->agent->nick, callerUser, "Invalid language ID");
+			return;
+		}
 
 		lang_id = strtoul(param, &err, 10);
 
@@ -1190,6 +1194,11 @@ void handle_lang(CSTR source, User *callerUser, ServiceCommandData *data) {
 
 
 		lang_id = strtoul(param, &err, 10);
+		
+		if (IS_NULL(param)) {
+			send_notice_to_user(data->agent->nick, callerUser, "Invalid language ID");
+			return;
+		}
 
 		if ((*err != '\0') || (lang_id == 0))
 			send_notice_to_user(data->agent->nick, callerUser, "Invalid language ID");
@@ -1227,6 +1236,12 @@ void handle_lang(CSTR source, User *callerUser, ServiceCommandData *data) {
 
 
 		lang_id = strtoul(param, &err, 10);
+		
+		if (IS_NULL(param)) {
+			send_notice_to_user(data->agent->nick, callerUser, "Invalid language ID");
+			return;
+		}
+
 
 		if ((*err != '\0') || (lang_id == 0))
 			send_notice_to_user(data->agent->nick, callerUser, "Invalid language ID");
