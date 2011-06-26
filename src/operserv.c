@@ -1457,8 +1457,47 @@ static void do_masskill(CSTR source, User *callerUser, ServiceCommandData *data)
 
 	if (IS_NULL(target = strtok(NULL, " ")) || IS_NULL(reason = strtok(NULL, ""))) {
 
-		send_notice_to_user(s_OperServ, callerUser, "Syntax: \2MKILL\2 <nick|host> [reason]");
+		send_notice_to_user(s_OperServ, callerUser, "Syntax: \2MKILL\2 <nick|host|#chan> [reason]");
 		send_notice_to_user(s_OperServ, callerUser, "Type \2/os OHELP MKILL\2 for more information.");
+	}
+	else if (*target == '#') {
+		/*Channel masskill*/
+		Channel *chan;
+		UserListItem	*u, *unext;
+		chan = hash_channel_find(target);
+		int killed = 0, skipped = 0;
+
+		if (IS_NULL(chan)) {
+			send_notice_to_user(s_OperServ, callerUser, "Channel %s does not exists.", target);
+			return;
+		}
+
+		for(u = chan->users; u; u = unext) {
+			unext = u->next;
+
+			if (user_is_services_agent(u->user) || user_is_ircop(u->user)) {
+				skipped++;
+				continue;
+			}
+
+			killed++;
+			if (!IS_NULL(reason))
+				send_KILL(NULL, u->user->nick, reason, TRUE);
+			else
+				send_KILL(NULL, u->user->nick, "Mass Killed", TRUE);
+
+		}
+		if (data->operMatch) {
+			send_globops(s_OperServ, "\2%s\2 masskilled chan %s [Killed \2%d\2 users, Skipped \2%d\2]", source, target, killed, skipped);
+			LOG_SNOOP(s_OperServ, "OS Mk %s -- by %s (%s@%s) [%s]", target, callerUser->nick, callerUser->username, callerUser->host, IS_NULL(reason) ? "Mass Killed" : reason);
+			log_services(LOG_SERVICES_OPERSERV, "Mk %s -- by %s (%s@%s) [%s]", target, callerUser->nick, callerUser->username, callerUser->host, IS_NULL(reason) ? "Mass Killed" : reason);
+		} else {
+			send_globops(s_OperServ, "\2%s\2 (through \2%s\2) masskilled chan %s [Killed \2%d\2 users, Skipped \2%d\2]", source, data->operName, target, killed, skipped);
+			LOG_SNOOP(s_OperServ, "OS Mk %s -- by %s (%s@%s) (through %s) [%s]", target, callerUser->nick, callerUser->username, callerUser->host, data->operName, IS_NULL(reason) ? "Mass Killed" : reason);
+			log_services(LOG_SERVICES_OPERSERV, "Mk %s -- by %s (%s@%s) (through %s) [%s]", target, callerUser->nick, callerUser->username, callerUser->host, data->operName, IS_NULL(reason) ? "Mass Killed" : reason);
+
+		}
+
 	}
 	else if (!strchr(target, '.') && !strchr(target, '?') && !strchr(target, '*')) {
 

@@ -4605,6 +4605,7 @@ static void chan_ds_dump_display(CSTR sourceNick, const User *callerUser, const 
 		send_notice_to_user(sourceNick, callerUser, "Mode +l/+k values: %d / 0x%08X \2[\2%s\2]\2",	chan->limit, (unsigned long)chan->key, str_get_valid_display_value(chan->key));
 
 		send_notice_to_user(sourceNick, callerUser, "Bans count / list size / list head: %d / %d / 0x%08X",			chan->bancount, chan->bansize, (unsigned long)chan->bans);
+		send_notice_to_user(sourceNick, callerUser, "Restricts count / list size / list head: %d / %d / 0x%08X",	chan->restrictcount, chan->restrictsize, (unsigned long)chan->restricts);
 		send_notice_to_user(sourceNick, callerUser, "Users [%d/%d] / ops [%d] / halfops [%d] / voices [%d]",	chan->userCount, users, ops, halfops, voices);
 		send_notice_to_user(sourceNick, callerUser, "List heads: 0x%08X / 0x%08X / 0x%08X / 0x%08X",		(unsigned long)chan->users, (unsigned long)chan->chanops, (unsigned long)chan->halfops, (unsigned long)chan->voices);
 
