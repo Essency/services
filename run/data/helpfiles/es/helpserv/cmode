@@ -1,4 +1,5 @@
 *** Channel Modes ***
+  B  - Solo los +o y los +h pueden ver la banlist. 
   b  - Permite banear una mask en el formato nick!user@host de un canal
   c  - Bloquea el envìo al canal de mensajes que tengan colores
   C  - Bloquea el envìo al canal de mensajes CTCP
@@ -21,4 +22,5 @@
   t  - Permite el cambio de topic del canal unicamente a los op's
   U  - Permite a los usuarios sin nick registrado en los robins .US y .EU entrar en un canal
   v  - Permite a los nicknames con +v escribir en un canal moderado (+m)
+  z  - Los que utilizan la mask especificada tienen que usar un nickname registrado para entrar en el canal.
 *** Fin de la Lista ***

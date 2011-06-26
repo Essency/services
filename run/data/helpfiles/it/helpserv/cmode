@@ -1,4 +1,5 @@
 *** Channel Modes ***
+  B  - Solo i +o, +h possono vedere la banlist del canale.
   b  - Permette di bannare una mask nel formato nick!user@host da un canale.
   c  - Impedisce di inviare al canale messaggi che contengano colori.
   C  - Impedisce di inviare CTCP al canale.
@@ -22,4 +23,5 @@
   u  - Non mostra i messaggi di QUIT e PART di utenti del canale.
   U  - Permette agli utenti esteri non identificati di entrare nel canale.
   v  - Concede ad un nickname il permesso di parlare in un canale moderato (+m).
+  z  - Gli utenti che matchano la mask impostata dovranno usare un nick registrato per accedere al canale.
 *** Fine della Lista ***
