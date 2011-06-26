@@ -1192,13 +1192,12 @@ void handle_lang(CSTR source, User *callerUser, ServiceCommandData *data) {
 		LANG_ID	lang_id;
 		char *err;
 
-
-		lang_id = strtoul(param, &err, 10);
-		
 		if (IS_NULL(param)) {
 			send_notice_to_user(data->agent->nick, callerUser, "Invalid language ID");
 			return;
 		}
+
+		lang_id = strtoul(param, &err, 10);
 
 		if ((*err != '\0') || (lang_id == 0))
 			send_notice_to_user(data->agent->nick, callerUser, "Invalid language ID");
@@ -1235,13 +1234,12 @@ void handle_lang(CSTR source, User *callerUser, ServiceCommandData *data) {
 		char *err;
 
 
-		lang_id = strtoul(param, &err, 10);
-		
 		if (IS_NULL(param)) {
 			send_notice_to_user(data->agent->nick, callerUser, "Invalid language ID");
 			return;
 		}
 
+		lang_id = strtoul(param, &err, 10);
 
 		if ((*err != '\0') || (lang_id == 0))
 			send_notice_to_user(data->agent->nick, callerUser, "Invalid language ID");
